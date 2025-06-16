@@ -26,6 +26,8 @@
   <audio id="alertSound" src="assets/sounds/alert.ogg" preload="auto"></audio>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- CRITICAL FIX: Socket.IO client MUST be loaded BEFORE your script.js -->
+  <script src="/socket.io/socket.io.min.js"></script> 
   <script src="script.js"></script>
 </body>
 </html>
