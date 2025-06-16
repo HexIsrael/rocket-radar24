@@ -5,7 +5,7 @@
   <title>מערכת התרעה רקטית</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css" /> <!-- Relative path, served by Render -->
 </head>
 <body>
   <div id="map"></div>
@@ -25,16 +25,10 @@
 
   <audio id="alertSound" src="assets/sounds/alert.ogg" preload="auto"></audio>
 
-  <!-- CRITICAL FIX: Define backendUrl GLOBALLY and ONLY ONCE here. -->
-  <!-- This variable will be available to all subsequent scripts. -->
-  <script>
-    // IMPORTANT: Replace "https://rocketradar24.onrender.com" with YOUR ACTUAL Render backend URL!
-    const backendUrl = "https://rocketradar24.onrender.com"; // Example URL - USE YOUR REAL ONE
-  </script>
-
+  <!-- No backendUrl const needed here; it will be accessed via relative paths -->
+  <!-- Socket.IO client will be loaded from the same domain as the server -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- CRITICAL FIX: Load Socket.IO client from the backend URL using the global variable -->
-  <script src="https://rocketradar24.onrender.com/socket.io/socket.io.min.js"></script> <!-- DIRECTLY PASTE YOUR RENDER URL HERE (again) -->
-  <script src="script.js"></script>
+  <script src="/socket.io/socket.io.min.js"></script> <!-- Now served by Render backend -->
+  <script src="script.js"></script> <!-- Relative path, served by Render -->
 </body>
 </html>
