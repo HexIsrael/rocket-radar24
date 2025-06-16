@@ -25,9 +25,16 @@
 
   <audio id="alertSound" src="assets/sounds/alert.ogg" preload="auto"></audio>
 
+  <!-- Define backendUrl GLOBALLY and hardcode for static HTML -->
+  <script>
+    // IMPORTANT: Replace this with your ACTUAL Render backend URL!
+    // This variable will be available to all subsequent scripts.
+    const backendUrl = "https://rocketradar24.onrender.com"; // Example URL - USE YOUR REAL ONE
+  </script>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- CRITICAL FIX: Socket.IO client MUST be loaded BEFORE your script.js -->
-  <script src="/socket.io/socket.io.min.js"></script> 
+  <!-- CRITICAL FIX: Load Socket.IO client from the backend URL using the global variable -->
+  <script src="https://rocketradar24.onrender.com/socket.io/socket.io.min.js"></script> <!-- DIRECTLY PASTE YOUR RENDER URL HERE -->
   <script src="script.js"></script>
 </body>
 </html>
