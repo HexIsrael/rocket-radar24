@@ -15,7 +15,7 @@ const io = new Server(server, { // Initialize Socket.IO with the HTTP server
 });
 
 const PORT = process.env.PORT || 3000;
-const POLL_INTERVAL = 5000; // Still poll Pikud, but only emit on changes
+const POLL_INTERVAL = 30000; // Still poll Pikud, but only emit on changes
 
 let lastAlertHash = ''; // To prevent re-emitting the same alert
 
@@ -76,6 +76,7 @@ pollPikudAndEmit(); // Start polling
 app.get('/alert', (req, res) => {
   res.json([]); // No longer needed for real-time, but keep for compatibility or initial load if needed
 });
+
 
 server.listen(PORT, () => { // Listen on the HTTP server, not the Express app directly
   console.log(`🚨 Server running at http://localhost:${PORT}`);

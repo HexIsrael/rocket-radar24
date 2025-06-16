@@ -51,16 +51,24 @@ socket.on('clear_map_visuals', () => {
 
 // --- City Data & Search Functions ---
 // Load city data from your cities-il.json file
-fetch('/cities-il.json')
-  .then(res => res.json())
+// Make sure backendUrl is defined above this line (it should be)
+// const backendUrl = "https://rocketradar24.onrender.com"; // Your Render URL
+
+fetch(backendUrl + '/cities-il.json') // <--- CRITICAL CHANGE HERE!
+  .then(res => {
+      if (!res.ok) throw new Error(`Failed to fetch cities-il.json: ${res.statusText}`);
+      return res.json();
+  })
   .then(data => {
     data.forEach(city => {
       cityCoords[city.name] = [city.lat, city.lon];
       allCities.add(city.name);
     });
     renderCityList();
+    console.log("Cities loaded successfully:", Object.keys(cityCoords).length);
   })
   .catch(err => console.error("Error loading cities-il.json:", err));
+
 
 function renderCityList(filter = '') {
   const f = filter.trim().toLowerCase();
