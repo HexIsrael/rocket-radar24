@@ -25,18 +25,16 @@ const timeline = document.getElementById('timeline');
 // --- Global State Variables ---
 let cityCoords = {};
 let allCities = new Set();
-let mapOverlays = []; // Stores static markers, circles, lines to clear them later
+let mapOverlays = []; // Stores static markers, circles, lines
 let animatedMarkers = []; // Stores markers that are currently animating
 
 // --- Socket.IO Client Setup (for Real-time) ---
-// IMPORTANT: Replace this URL with your Render.com backend URL!
-const backendUrl = "https://rocketradar24.onrender.com"; // Default for local dev, CHANGE FOR DEPLOYMENT!
-const socket = io(backendUrl);
+// backendUrl is now defined globally in index.html, so we use it directly.
+const socket = io(backendUrl); // Connects to the URL defined in index.html
 
 // Listen for alert events from the server (pushed via WebSocket)
 socket.on('alert', (alertData) => {
   console.log('[Client] Received alert via WebSocket:', alertData);
-  // Ensure alertData is an array
   const alerts = Array.isArray(alertData) ? alertData : [alertData];
   updateAlerts(alerts);
 });
@@ -50,11 +48,8 @@ socket.on('clear_map_visuals', () => {
 });
 
 // --- City Data & Search Functions ---
-// Load city data from your cities-il.json file
-// Make sure backendUrl is defined above this line (it should be)
-// const backendUrl = "https://rocketradar24.onrender.com"; // Your Render URL
-
-fetch(backendUrl + '/cities-il.json') // <--- CRITICAL CHANGE HERE!
+// Load city data from cities-il.json file. Uses the global backendUrl.
+fetch(backendUrl + '/cities-il.json') // <--- Uses global backendUrl
   .then(res => {
       if (!res.ok) throw new Error(`Failed to fetch cities-il.json: ${res.statusText}`);
       return res.json();
@@ -68,7 +63,6 @@ fetch(backendUrl + '/cities-il.json') // <--- CRITICAL CHANGE HERE!
     console.log("Cities loaded successfully:", Object.keys(cityCoords).length);
   })
   .catch(err => console.error("Error loading cities-il.json:", err));
-
 
 function renderCityList(filter = '') {
   const f = filter.trim().toLowerCase();
@@ -153,8 +147,7 @@ function simulateRocket(originCoords, targetCoords, emoji, duration = 10000) { /
   const rocketMarker = L.marker(originCoords, { icon: rocketIcon }).addTo(map);
   animatedMarkers.push(rocketMarker); // Track animated markers separately
 
-  // Draw the static path line (remains after animation)
-  drawLine(originCoords, targetCoords);
+  drawLine(originCoords, targetCoords); // Draw the static path line (remains after animation)
 
   let startTime = null;
 
@@ -183,12 +176,12 @@ function simulateRocket(originCoords, targetCoords, emoji, duration = 10000) { /
 // --- Origin Guessing for Animations ---
 function guessLaunchOrigin(text) {
   const sources = {
-    'עזה': [31.5, 34.466], // General Gaza Strip
-    'לבנון': [33.25, 35.5], // South Lebanon
-    'צפון': [33.1, 35.65], // General North (Galilee)
-    'סוריה': [33.4, 36.2], // Southern Syria
-    'איראן': [32.0, 51.0], // Symbolic far-off origin, rarely used
-    'דרום': [31.2, 34.3] // General South (Negev)
+    'עזה': [31.5, 34.466],
+    'לבנון': [33.25, 35.5],
+    'צפון': [33.1, 35.65],
+    'סוריה': [33.4, 36.2],
+    'איראן': [32.0, 51.0],
+    'דרום': [31.2, 34.3]
   };
   for (const key in sources) {
     if (text.includes(key)) return sources[key];
@@ -199,7 +192,6 @@ function guessLaunchOrigin(text) {
 // --- Main Alert Processing Function ---
 function updateAlerts(alerts) {
   // Clear map overlays ONLY if this is a new set of alerts that are NOT 'none' types
-  // This logic is mostly handled by socket.on('clear_map_visuals') now, but good to have a primary clear here too.
   clearMapOverlays();
   clearTimeline(); // Clear timeline to show only latest batch of relevant alerts at the top
 
