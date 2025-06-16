@@ -1,9 +1,9 @@
-/* Essential base for map to show */
+/* Base Styles for Desktop (larger screens) and overall layout */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%; /* Crucial: body needs 100% height for #map 100% to work */
-  direction: rtl;
+  direction: rtl; /* Right-to-Left for Hebrew */
   font-family: sans-serif;
   background: #111;
   color: #eee;
@@ -11,11 +11,11 @@ html, body {
 
 #map {
   width: 100%;
-  height: 100%; /* Crucial: map container needs 100% height */
-  position: relative; /* Ensure it stays in flow or can be positioned relative to */
+  height: 100%; /* Map fills the entire screen initially */
+  position: relative;
 }
 
-/* Left-side Panel for search */
+/* Left-side Panel for search / city list */
 #panel {
   position: absolute;
   top: 10px;
@@ -23,10 +23,11 @@ html, body {
   background: rgba(0,0,0,0.85);
   padding: 15px;
   border-radius: 10px;
-  width: 260px;
-  z-index: 1000; /* Higher than map */
-  max-height: 80%; /* Limit height to prevent overflow on small screens */
+  width: 260px; /* Fixed width for desktop */
+  z-index: 1000;
+  max-height: 80%;
   overflow-y: auto;
+  box-sizing: border-box; /* Include padding in width */
 }
 
 #searchCities {
@@ -46,57 +47,62 @@ html, body {
   cursor: pointer;
 }
 
-/* Alert Popup */
+/* Alert Popup (for critical messages) */
 #popupAlert {
   position: fixed;
   top: 30%;
-  right: 350px; /* Positioned to the left of the timeline */
+  right: 350px; /* Positioned to the left of the timeline on desktop */
   background: #a00;
   color: white;
   padding: 20px;
   font-size: 18px;
   border-radius: 10px;
-  display: none; /* Hidden by default */
-  z-index: 2000; /* Highest z-index */
+  display: none;
+  z-index: 2000;
+  text-align: center; /* Center text */
+  max-width: 80%; /* Limit width */
+  left: 50%; /* For centering on mobile */
+  transform: translateX(-50%); /* For centering on mobile */
 }
 
-/* Right-side Timeline (Dock-style) */
+
+/* Right-side Timeline (Alert Log) - Dock-style on Desktop */
 #timeline {
   position: absolute;
   bottom: 0;
-  right: 0; /* Positioned on the right side */
-  width: 280px; /* Fixed width for the dock */
+  right: 0; /* Positioned on the right side on desktop */
+  width: 280px; /* Fixed width for desktop dock */
   height: 100%; /* Takes full height of its parent (body) */
-  max-height: 100%; /* Ensures it doesn't exceed parent height */
-  overflow-y: auto; /* Scrollable if content overflows vertically */
+  max-height: 100%;
+  overflow-y: auto; /* Scrollable */
   background: rgba(0,0,0,0.85);
   color: #0f0;
   padding: 10px;
   font-size: 14px;
-  z-index: 999; /* Higher than map */
-  box-sizing: border-box; /* Include padding in width calculation */
-  border-left: 1px solid rgba(255,255,255,0.1); /* Visual separation from map */
+  z-index: 999;
+  box-sizing: border-box;
+  border-left: 1px solid rgba(255,255,255,0.1); /* Visual separator */
 }
 
 .timeline-event {
-  display: block; /* Each event takes its own line */
+  display: block;
   background: #111;
-  border-right: 4px solid #f00; /* Border on the right for RTL layout */
+  border-right: 4px solid #f00; /* Border on the right for RTL */
   padding: 5px 10px;
   margin: 6px 0;
-  white-space: normal; /* Allow text to wrap */
-  border-left: none; /* Ensure no conflicting left border */
+  white-space: normal;
+  border-left: none; /* Remove conflicting left border */
 }
 
 /* Map Controls (Theme Toggle) */
 #mapControls {
   position: absolute;
   top: 10px;
-  right: 310px; /* Positioned to the left of the timeline */
+  right: 310px; /* Positioned to the left of timeline on desktop */
   background: rgba(0,0,0,0.7);
   padding: 10px;
   border-radius: 10px;
-  z-index: 999; /* Higher than map */
+  z-index: 999;
 }
 
 #mapControls button {
@@ -109,9 +115,125 @@ html, body {
   font-weight: bold;
 }
 
-/* Adjust Leaflet's built-in attribution control so it doesn't hide behind timeline */
+/* Adjust Leaflet's built-in attribution control */
 .leaflet-control-attribution {
-  margin-right: 300px !important; /* Push attribution to the left to avoid timeline */
+  margin-right: 300px !important; /* Push attribution left to avoid timeline */
   margin-left: 0 !important;
   text-align: left !important;
+}
+
+/* --------------------------------------------------- */
+/* MOBILE SPECIFIC STYLES - Using Media Queries        */
+/* These styles apply when screen width is 768px or less */
+/* --------------------------------------------------- */
+@media screen and (max-width: 768px) {
+  /* General adjustments for mobile */
+  body, html {
+    font-size: 14px; /* Slightly smaller base font */
+  }
+
+  /* Adjust Map: Take full screen, panels overlay */
+  #map {
+    height: 100vh; /* Use viewport height to ensure it fits mobile screen */
+    width: 100vw; /* Use viewport width */
+  }
+
+  /* Left Panel (Search/City List) for Mobile */
+  #panel {
+    top: 0; /* Align to top */
+    left: 0; /* Align to left */
+    width: 100%; /* Full width */
+    max-height: 40%; /* Take up to 40% of screen height */
+    border-radius: 0; /* No rounded corners on edges */
+    padding: 10px; /* Slightly less padding */
+    background: rgba(0,0,0,0.9); /* More opaque */
+    box-sizing: border-box; /* Include padding in width */
+  }
+  #panel h3 {
+      font-size: 1.1em;
+      margin-top: 5px;
+  }
+  #searchCities {
+      padding: 5px;
+      font-size: 13px;
+  }
+  .cityItem {
+      padding: 4px 8px;
+      font-size: 13px;
+  }
+
+
+  /* Timeline (Alert Log) for Mobile */
+  #timeline {
+    bottom: 0; /* Align to bottom */
+    right: 0; /* Align to right */
+    width: 100%; /* Full width */
+    max-height: 30%; /* Take up to 30% of screen height from bottom */
+    border-radius: 0;
+    padding: 10px;
+    background: rgba(0,0,0,0.9);
+    border-top: 1px solid rgba(255,255,255,0.1); /* Separator on top */
+    border-left: none; /* Remove left border */
+  }
+  .timeline-event {
+    font-size: 0.9em; /* Slightly smaller text */
+  }
+
+  /* Map Controls (Theme Toggle) for Mobile */
+  #mapControls {
+    top: auto; /* Remove fixed top position */
+    bottom: 35%; /* Position above the timeline (e.g., 30% for timeline + 5% gap) */
+    right: 10px; /* Keep to the right */
+    left: auto; /* Remove left positioning */
+    background: rgba(0,0,0,0.6); /* Slightly less opaque */
+    padding: 8px;
+    border-radius: 8px;
+  }
+  #mapControls button {
+    padding: 5px 10px; /* Smaller button */
+    font-size: 0.9em;
+  }
+
+  /* Popup Alert for Mobile: Ensure it's centered */
+  #popupAlert {
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    right: auto; /* Remove right positioning */
+    transform: translate(-50%, -50%); /* Adjust for true centering */
+    width: 90%; /* Max width for readability */
+    max-width: 300px; /* Absolute max width */
+    font-size: 16px; /* Slightly smaller font */
+    padding: 15px;
+  }
+
+  /* Adjust Leaflet Attribution for Mobile */
+  .leaflet-control-attribution {
+      margin-right: 10px !important; /* Adjust margin */
+      margin-left: 10px !important;
+      bottom: 5px !important; /* Lower to avoid timeline */
+      background: rgba(0,0,0,0.6); /* Make it more readable */
+      padding: 2px 5px;
+      border-radius: 5px;
+  }
+
+  /* Adjust default Leaflet controls (zoom, scale) if they overlap */
+  .leaflet-top.leaflet-left, .leaflet-bottom.leaflet-left {
+      left: 10px; /* Move default controls to the left */
+  }
+  .leaflet-top.leaflet-right, .leaflet-bottom.leaflet-right {
+      right: 10px; /* Move default controls to the right */
+  }
+}
+
+/* Fine-tuning for very small phone screens (e.g., width less than 480px) */
+@media screen and (max-width: 480px) {
+    #panel {
+        max-height: 35%; /* Adjust panel height for very small screens */
+    }
+    #timeline {
+        max-height: 35%; /* Adjust timeline height for very small screens */
+    }
+    #mapControls {
+        bottom: 40%; /* Position above adjusted timeline */
+    }
 }
