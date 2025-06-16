@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8" />
+<title>שיגורי טיל בזמן אמתי</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; background: #0e0e0e; color: #eee; font-family: sans-serif;
+    direction: rtl;
+  }
+  #map { width: 100%; height: 100%; }
+  #panel {
+    position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 15px;
+    border-radius: 10px; max-height: 90%; overflow-y: auto; z-index: 9999;
+    width: 260px;
+  }
+  #panel h3 {
+    margin-top: 0;
+  }
+  #searchCities {
+    width: 100%; padding: 6px; margin-bottom: 10px; border-radius: 5px; border: none;
+    font-size: 14px;
+  }
+  #cityList {
+    max-height: 400px; overflow-y: auto;
+  }
+  .cityItem {
+    padding: 5px 8px;
+    margin: 2px 0;
+    background: #222;
+    border-radius: 5px;
+    cursor: default;
+    user-select: none;
+  }
+  #controls {
+    position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px;
+    border-radius: 10px; color: #fff; z-index: 9999;
+    display: flex; flex-direction: column; gap: 6px;
+    width: 180px;
+  }
+  #settingsMenu {
+    position: absolute; top: 120px; right: 10px; background: rgba(20,20,20,0.95); padding: 10px;
+    border-radius: 10px; color: #0f0; display: none; z-index: 9999;
+    font-size: 14px;
+    width: 180px;
+  }
+  #timeline {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 100px;
+    background: rgba(0,0,0,0.8); overflow-x: auto; white-space: nowrap; color: #0f0;
+    font-size: 13px; padding: 5px;
+    box-sizing: border-box;
+    z-index: 999;
+  }
+  .timeline-event {
+    display: inline-block; margin: 10px; padding: 5px 10px; background: #111; border-left: 3px solid #f00;
+    white-space: normal; text-align: right;
+  }
+  #radarCanvas {
+    position: absolute; bottom: 20px; right: 20px; width: 200px; height: 200px;
+    background: #000; border-radius: 50%; z-index: 999;
+  }
+  button {
+    cursor: pointer;
+    background: #222;
+    border: 1px solid #0f0;
+    color: #0f0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    user-select: none;
+  }
+  button:active {
+    background: #0f0;
+    color: #000;
+  }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+<div id="map"></div>
+
+<div id="panel">
+  <h3>ערים בסטטוס התרעה</h3>
+  <input id="searchCities" placeholder="חפש עיר..." autocomplete="off" />
+  <div id="cityList"></div>
+</div>
+
+<div id="controls">
+  <button onclick="alertSound.play()">🔊 נגן התרעה לבדיקה</button>
+  <button onclick="toggleSettings()">⚙️ הגדרות</button>
+  <button onclick="focusOnCity('תל אביב')">📍 תל אביב</button>
+  <button onclick="focusOnCity('חיפה')">📍 חיפה</button>
+  <button onclick="focusOnCity('ירושלים')">📍 ירושלים</button>
+  <button onclick="focusOnCity('קסריה')">📍 קיסריה</button>
+</div>
+
+<div id="settingsMenu">
+  <label><input type="checkbox" id="showPaths" checked> הצג מסלולי טילים</label><br>
+  <label><input type="checkbox" id="showCircles" checked> הצג מעגלי יעד</label><br>
+  <label><input type="checkbox" id="enableSound" checked> הפעלת צליל בעת התרעה</label>
+</div>
+
+<div id="timeline"></div>
+
+<canvas id="radarCanvas" width="200" height="200"></canvas>
+
+<audio id="alertSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  // Initialize map
+  const map = L.map('map', {
+    center: [32.1, 34.85],
+    zoom: 8
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
+
+  // DOM elements
+  const alertSound = document.getElementById('alertSound');
+  const cityListElem = document.getElementById('cityList');
+  const searchCitiesInput = document.getElementById('searchCities');
+  const timeline = document.getElementById('timeline');
+  const settingsMenu = document.getElementById('settingsMenu');
+
+  // State
+  let allCities = new Set();
+  let rocketMarkers = [];
+  let pathLines = [];
+  let circleMarkers = [];
+
+  // City locations (add more as needed)
+  const cityCoords = {
+    'תל אביב': [32.08, 34.78],
+    'ירושלים': [31.78, 35.22],
+    'חיפה': [32.82, 34.99],
+    'קסריה': [32.5, 34.91],
+    // Add other city coords here for focusing/map features
+    'בני ברק': [32.08, 34.83],
+    'רמת גן': [32.08, 34.83],
+    'ראשון לציון': [31.88, 34.8],
+    'אשדוד': [31.8, 34.65],
+    'בת ים': [32.02, 34.75],
+    'אילת': [29.56, 34.95],
+  };
+
+  // Launch locations (can add more)
+  const launchLocations = {
+    'לבנון': [33.25, 35.5],
+    'צפון': [32.9, 35.1],
+    'דרום': [31.2, 34.3],
+    'עזה': [31.5, 34.4],
+    'איראן': [32.0, 51.0],
+    'סוריה': [33.4, 36.3],
+  };
+
+  // Toggle settings panel
+  function toggleSettings() {
+    settingsMenu.style.display = settingsMenu.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // Focus map on city (if known)
+  function focusOnCity(name) {
+    const coords = cityCoords[name];
+    if (coords) {
+      map.flyTo(coords, 12);
+    } else {
+      alert('מיקום לעיר לא זמין');
+    }
+  }
+
+  // Clear previous markers/lines/circles from map
+  function clearMapOverlays() {
+    rocketMarkers.forEach(m => map.removeLayer(m));
+    rocketMarkers = [];
+    pathLines.forEach(l => map.removeLayer(l));
+    pathLines = [];
+    circleMarkers.forEach(c => map.removeLayer(c));
+    circleMarkers = [];
+  }
+
+  // Render city list with filtering
+  function renderCityList(filter = '') {
+    const lowerFilter = filter.trim().toLowerCase();
+    cityListElem.innerHTML = '';
+    const filtered = [...allCities].filter(c => c.includes(lowerFilter) || c.toLowerCase().includes(lowerFilter));
+    filtered.sort();
+    filtered.forEach(city => {
+      const div = document.createElement('div');
+      div.className = 'cityItem';
+      div.textContent = city;
+      cityListElem.appendChild(div);
+    });
+  }
+
+  // Simulate rocket moving from launch to target (basic linear animation)
+  function simulateRocket(locName, targetCoords) {
+    const originCoords = getLaunchLocation(locName);
+    if (!originCoords || !targetCoords) return;
+
+    // Create rocket marker
+    const rocketIcon = L.divIcon({ html: '🚀', className: '', iconSize: [20, 20] });
+    const rocketMarker = L.marker(originCoords, { icon: rocketIcon }).addTo(map);
+    rocketMarkers.push(rocketMarker);
+
+    // Draw path line if enabled
+    if (document.getElementById('showPaths').checked) {
+      const line = L.polyline([originCoords, targetCoords], { color: 'red', dashArray: '5, 10' }).addTo(map);
+      pathLines.push(line);
+    }
+
+    // Draw target circle if enabled
+    if (document.getElementById('showCircles').checked) {
+      const circle = L.circle(targetCoords, {
+        color: 'red', fillColor: '#f03', fillOpacity: 0.3, radius: 500
+      }).addTo(map).bindPopup('🎯 יעד משוער');
+      circleMarkers.push(circle);
+    }
+
+    // Animate rocket along line (approx 10s)
+    let step = 0;
+    const stepsCount = 100;
+    const interval = setInterval(() => {
+      const lat = originCoords[0] + (targetCoords[0] - originCoords[0]) * step / stepsCount;
+      const lon = originCoords[1] + (targetCoords[1] - originCoords[1]) * step / stepsCount;
+      rocketMarker.setLatLng([lat, lon]);
+      step++;
+      if (step > stepsCount) {
+        clearInterval(interval);
+        map.removeLayer(rocketMarker);
+        rocketMarkers = rocketMarkers.filter(m => m !== rocketMarker);
+      }
+    }, 100);
+  }
+
+  // Extract launch location by name
+  function getLaunchLocation(name) {
+    for (const key in launchLocations) {
+      if (name.includes(key)) return launchLocations[key];
+    }
+    return null;
+  }
+
+  // Parse and update alerts from API response
+  function updateAlerts(data) {
+    clearMapOverlays();
+    allCities.clear();
+    timeline.innerHTML = '';
+
+    if (!Array.isArray(data)) return;
+
+    data.forEach(alert => {
+      // Each alert might have:
+      // cat (category), title, data (array of cities), id, desc, etc.
+      // For display, we parse cities and show alert info
+
+      // Add cities from this alert to allCities
+      if (Array.isArray(alert.data)) {
+        alert.data.forEach(city => {
+          allCities.add(city);
+        });
+      }
+
+      // Add timeline event
+      const div = document.createElement('div');
+      div.className = 'timeline-event';
+      div.textContent = `${alert.title}\n${alert.data ? alert.data.join(', ') : ''}`;
+      timeline.appendChild(div);
+
+      // Play sound if rocket or catbam detected (cat 1 or 2 example)
+      if (document.getElementById('enableSound').checked) {
+        // Using categories for missile or bomb (adjust based on API docs)
+        if (alert.cat === '1' || alert.cat === '2' || alert.title.includes('שיגור') || alert.title.includes('קטב"ם')) {
+          alertSound.play();
+        }
+      }
+
+      // For rocket alerts, simulate rocket path for each launch location city
+      if (alert.title.includes('שיגור')) {
+        // Target is a main city, e.g. תל אביב, or center of Israel approx
+        const mainTarget = cityCoords['תל אביב'] || [32.08, 34.78];
+
+        // For each launch location detected in alert.title or desc
+        for (const locKey in launchLocations) {
+          if (alert.title.includes(locKey) || (alert.desc && alert.desc.includes(locKey))) {
+            simulateRocket(locKey, mainTarget);
+          }
+        }
+      }
+    });
+
+    renderCityList(searchCitiesInput.value);
+  }
+
+  // Fetch alerts from your proxy server
+  async function fetchAlerts() {
+    try {
+      const res = await fetch('http://localhost:3000/alert');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        updateAlerts(json);
+      } else if (json.alerts) {
+        updateAlerts(json.alerts);
+      } else {
+        console.warn('Unknown alert format:', json);
+      }
+    } catch (e) {
+      console.error('Error fetching alerts:', e);
+    }
+  }
+
+  // Search input handler
+  searchCitiesInput.addEventListener('input', () => {
+    renderCityList(searchCitiesInput.value);
+  });
+
+  // Radar sweep animation
+  function radarSweep() {
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = canvas.width / 2 - 10;
+    let angle = 0;
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      gradient.addColorStop(0, 'rgba(0,255,0,0.4)');
+      gradient.addColorStop(1, 'rgba(0,255,0,0)');
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, angle, angle + 0.2);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      angle += 0.03;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  // Init
+  fetchAlerts();
+  setInterval(fetchAlerts, 60000);
+  radarSweep();
+
+</script>
+</body>
+</html>

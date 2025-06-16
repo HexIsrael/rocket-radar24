@@ -1,0 +1,23 @@
+// server.js
+const express = require('express');
+const cors = require('cors');
+const pikud = require('pikud-haoref-api');
+
+const app = express();
+app.use(cors());
+const POLL_INTERVAL = 5000;
+
+// Store latest data
+let current = { type: 'none', cities: [], instructions: '' };
+function poll() {
+  pikud.getActiveAlert((err, alert) => {
+    if (!err && alert) current = alert;
+    setTimeout(poll, POLL_INTERVAL);
+  });
+}
+poll();
+
+app.get('/alert', (req, res) => res.json(current));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Proxy server is up on port ${PORT}`));

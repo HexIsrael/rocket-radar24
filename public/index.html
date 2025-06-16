@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <title>מערכת התרעה רקטית</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="panel">
+    <h3>התראות פעילות</h3>
+    <input id="searchCities" placeholder="חיפוש עיר..." />
+    <div id="cityList"></div>
+  </div>
+
+  <div id="mapControls">
+    <button onclick="toggleMapTheme()">🌓 החלף צבע מפה</button>
+  </div>
+
+  <div id="popupAlert"></div>
+  <div id="timeline"></div>
+
+  <audio id="alertSound" src="assets/sounds/alert.ogg" preload="auto"></audio>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
